@@ -28,6 +28,7 @@ class TabNotesTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         user_home = self.root / "home"
         user_home.mkdir()
+        (user_home / ".zshenv").write_text("unsetopt GLOBAL_RCS\n")
         (user_home / ".zshrc").write_text(f"source {shlex.quote(str(PROJECT / 'tab_notes.zsh'))}\n")
         config = self.root / "config.toml"
         config.write_text((PROJECT / "example_config.toml").read_text()
@@ -154,6 +155,7 @@ class TabNotesTests(unittest.TestCase):
         user_home = Path(self.environment["HOME"])
         shutil.rmtree(user_home)
         user_home.mkdir()
+        (user_home / ".zshenv").write_text("unsetopt GLOBAL_RCS\n")
         (user_home / ".zshrc").write_text(f"source {shlex.quote(str(PROJECT / 'tab_notes.zsh'))}\n")
 
         self.start_session()
