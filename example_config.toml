@@ -1,0 +1,13 @@
+onboarding = false
+
+[keys]
+prefix = "ctrl+a"
+
+[[keys.command]]
+key = "prefix+n"
+type = "plugin_action"
+command = "shcheglovnd.herdr-vim-notes.open-notes"
+description = "Open tab notes in Vim"
+
+[experimental]
+pane_history = true

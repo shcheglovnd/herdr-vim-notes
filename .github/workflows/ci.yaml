@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install Vim, Zsh and Herdr
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y vim zsh
+          herdr_binary="$RUNNER_TEMP/herdr"
+          curl --fail --location --retry 3 https://github.com/herdrdev/herdr/releases/download/v0.9.5/herdr-linux-x86_64 --output "$herdr_binary"
+          echo "14d9e8bc8b4a9e0118d77c32266f76d461f09b40342eb23752960bd89f59929d  $herdr_binary" | sha256sum --check
+          chmod +x "$herdr_binary"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Check shell syntax
+        run: zsh -n tab_notes.zsh
+      - name: Run integration tests
+        run: python3 -m unittest discover -s tests -v
