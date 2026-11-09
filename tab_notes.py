@@ -76,7 +76,9 @@ def edit_note():
     remember_pane(os.environ["HERDR_PANE_ID"], note)
     os.environ.pop("HERDR_VIM_NOTES", None)
     os.environ["HERDR_VIM_NOTES_ACTIVE"] = "1"
-    os.execvp("vim", ["vim", "-n", "-S", str(Path(__file__).with_suffix(".vim")), "--", str(note)])
+    vim_arguments = ["vim", "-N", "-n", "--cmd", "set shortmess+=F",
+                     "-S", str(Path(__file__).with_suffix(".vim")), "--", str(note)]
+    os.execvp("vim", vim_arguments)
 
 
 def main():

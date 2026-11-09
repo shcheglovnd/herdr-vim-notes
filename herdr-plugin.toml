@@ -1,6 +1,6 @@
 id = "shcheglovnd.herdr-vim-notes"
 name = "Herdr Vim Notes"
-version = "0.1.0"
+version = "0.1.1"
 description = "Persistent Markdown notes for each tab, edited in a right-hand Vim split."
 min_herdr_version = "0.9.5"
 platforms = ["linux", "macos"]

@@ -77,9 +77,9 @@ class TabNotesTests(unittest.TestCase):
                 return
         self.fail(f"Vim did not become ready in {pane_id}: {processes}; {visible}")
 
-    def start_session(self):
+    def start_session(self, columns=160):
         self.master, slave = pty.openpty()
-        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 32, 160, 0, 0))
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 32, columns, 0, 0))
         self.process = subprocess.Popen([HERDR_BINARY, "--session", self.session],
                                         stdin=slave, stdout=slave, stderr=slave, env=self.environment)
         os.close(slave)
@@ -158,7 +158,7 @@ class TabNotesTests(unittest.TestCase):
         (user_home / ".zshenv").write_text("unsetopt GLOBAL_RCS\n")
         (user_home / ".zshrc").write_text(f"source {shlex.quote(str(PROJECT / 'tab_notes.zsh'))}\n")
 
-        self.start_session()
+        self.start_session(columns=80)
         restored = self.notes_panes(1)[0]
         self.assertEqual(restored["pane_id"], note_pane["pane_id"])
         self.assertEqual(restored["tab_id"], note_pane["tab_id"])
