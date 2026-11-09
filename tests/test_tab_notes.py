@@ -50,6 +50,8 @@ class TabNotesTests(unittest.TestCase):
         result = subprocess.run([HERDR_BINARY, "--session", self.session, *args],
                                 env=self.environment, capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, (args, result.stdout, result.stderr))
+        if args[:2] == ("pane", "read"):
+            return result.stdout
         return json.loads(result.stdout)["result"]
 
     def drain(self, duration=0.1):
@@ -62,6 +64,17 @@ class TabNotesTests(unittest.TestCase):
                     break
             except OSError:
                 break
+
+    def wait_for_vim(self, pane_id):
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            self.drain()
+            processes = self.cli("pane", "process-info", "--pane", pane_id)["process_info"]["foreground_processes"]
+            visible = self.cli("pane", "read", pane_id, "--source", "visible")
+            if any(process.get("argv", [None])[0] == "vim" for process in processes) and "\n~\n" in visible:
+                self.drain()
+                return
+        self.fail(f"Vim did not become ready in {pane_id}: {processes}; {visible}")
 
     def start_session(self):
         self.master, slave = pty.openpty()
@@ -112,7 +125,7 @@ class TabNotesTests(unittest.TestCase):
     def test_quitting_and_reopening_vim_reuses_the_tab_file(self):
         os.write(self.master, b"\x01n")
         first_pane = self.notes_panes(1)[0]
-        self.drain(0.5)
+        self.wait_for_vim(first_pane["pane_id"])
         os.write(self.master, b"iKeep this note.\x1b")
         self.drain(0.2)
         os.write(self.master, b":q\r")
@@ -130,7 +143,7 @@ class TabNotesTests(unittest.TestCase):
     def test_vim_autosaves_and_reopens_the_same_note_after_server_and_home_replacement(self):
         os.write(self.master, b"\x01n")
         note_pane = self.notes_panes(1)[0]
-        self.drain(0.5)
+        self.wait_for_vim(note_pane["pane_id"])
         os.write(self.master, b"iSurvive the next restart.\x1b")
         note = next((self.root / "state/herdr/tab_notes").glob("*/tabs/*.md"))
         deadline = time.monotonic() + 5
@@ -150,7 +163,7 @@ class TabNotesTests(unittest.TestCase):
         layout = self.cli("pane", "layout", "--pane", restored["pane_id"])["layout"]
         rect = next(pane["rect"] for pane in layout["panes"] if pane["pane_id"] == restored["pane_id"])
         self.assertAlmostEqual(rect["width"] / layout["area"]["width"], 0.25, delta=0.02)
-        self.drain(0.5)
+        self.wait_for_vim(restored["pane_id"])
         os.write(self.master, b"A Still editing.\x1b")
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline and note.read_text() != "Survive the next restart. Still editing.\n":
